@@ -1,0 +1,56 @@
+body,html,#container{
+	height: 100%;
+	margin: 0px
+}
+
+.action{
+	position: absolute;
+	left: 10px;
+	bottom: 60px;
+}
+
+.top{
+	left: 0px;
+	top: 10px;
+	position: absolute;
+	width: 100%;
+	text-align: center;
+}
+
+.panel{
+	margin: 0 auto; 
+	padding: 1%;
+	color: #333;
+	background-color: #eee;
+	border-radius: 5px;
+	border: 1px solid silver;
+	width: 90%;
+	text-align: center;
+}
+
+#input{
+	margin: 0 auto; 
+	width: 96%;
+	height: 25px;
+}
+
+.info-title{
+	color: white;
+	font-size: 14px;
+	background-color: rgba(0,155,255,0.8);
+	line-height: 26px;
+	padding: 0px 0 0 6px;
+	font-weight: lighter;
+	letter-spacing: 1px
+}
+
+.info-content{
+	padding: 4px;
+	color: #666666;
+	line-height: 23px;
+}
+
+.info-content img{
+	float: left;
+	margin: 3px;
+}

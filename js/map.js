@@ -1,118 +1,179 @@
 /**
- * @File: map.js
- * @Description: map
+ * @File: Map.js
+ * @Description: Map
  *
  * @Author:  Pury 
  * @Email:   szwzjx@gmail.com
- * @Version: 0.0.1
- * @Date:    2015-12-16
+ * @Version: 0.0.2
+ * @Date:    2015-1-30
  *
- * Copyright © 2015 pury.org.   
+ * Copyright (C) 2015 - 2016 pury.org.   
  * All rights reserved.
  *
  */
- 
-var latitude, longitude, geocoder, marker, map, transfer, walking, driving;
-var input = document.getElementById('input');
 
-function onLoad()
+ var GMap = GMap || {};
+
+ /**
+  * Map
+  *
+  * @class
+  */
+function Map() 
 {
-	map = new AMap.Map('container');
-	map.setZoom(13);
+	this.mMap = null;
+	this.mTransfer = null;
+	this.mWalking = null;
+	this.mDriving = null;
+	this.mInfowindow = null;
+	this.mGeocoder = null;
+	this.mMarker = null;
+	this.mLatitude = null;
+	this.mLongitude = null;
+	this.mInput = document.getElementById('input');
+}
+
+Map.prototype.show = function()
+{
+	if(!AMap)
+	{
+		alert(GMap.ConstString.cServerError);
+		return;
+	}
+
+	console.log("Version: " + GMap.Config.VERSION);
+	var self = this;
+	self.mMap = new AMap.Map('container');
+	self.mMap.setZoom(10);
 	
 	AMap.service('AMap.Geocoder',function(){
-		geocoder = new AMap.Geocoder({});
+		self.mGeocoder = new AMap.Geocoder();
 	});
 	
 	AMap.service(['AMap.ToolBar','AMap.Scale'],function(){
 		var toolBar = new AMap.ToolBar();
 		var scale = new AMap.Scale();
-		map.addControl(toolBar);
-		map.addControl(scale);
+		self.mMap.addControl(toolBar);
+		self.mMap.addControl(scale);
 	});	
 	
 	AMap.service('AMap.Transfer',function(){
-        transfer = new AMap.Transfer({});
-    })
-    AMap.service('AMap.Walking',function(){
-        walking = new AMap.Walking({});
-    })
-    AMap.service('AMap.Driving',function(){
-        driving = new AMap.Driving({});
-    })
+        self.mTransfer = new AMap.Transfer({});
+    });
 	
-	marker = new AMap.Marker({
-		map:map
+    AMap.service('AMap.Walking',function(){
+        self.mWalking = new AMap.Walking({});
+    });
+	
+    AMap.service('AMap.Driving',function(){
+        self.mDriving = new AMap.Driving({});
+    });
+	
+	AMap.service('AMap.AdvancedInfoWindow',function(){
+		self.mInfowindow = new AMap.AdvancedInfoWindow({
+			content:
+				'<div class="info-title">' + 
+				GMap.ConstString.cMapName +
+				'</div><div class="info-content">'+
+				'<img src="http://webapi.amap.com/images/amap.jpg">'+
+				GMap.ConstString.cMapContent +
+				'<br/>' +
+				'(Amap - By Pury)',
+			offset: new AMap.Pixel(0, -30)
+		});
 	});
 	
-	getPosition();
-}
-
-function mapGoTO(x, y)
-{	
-	map.setCenter([x,y]);
-	marker.setPosition([x,y]);
-}
-
-function showPosition(position)
-{
-	latitude  = position.coords.latitude;
-	longitude = position.coords.longitude;
-	mapGoTO(longitude, latitude);
-	getAddress();
-}
-
-function getAddress()
-{
-	var lnglatXY = [longitude, latitude];
+	self.mMarker = new AMap.Marker({
+		map:self.mMap
+	});
 	
-	geocoder.getAddress(lnglatXY, function(status, result)
+	self.mMarker.on('click',function(e){
+		self.mInfowindow.open(map,e.target.getPosition());
+    })
+	
+	self.getPosition();
+};
+
+Map.prototype.mapGoTO = function(x, y)
+{	
+	this.mMap.setCenter([x,y]);
+	this.mMarker.setPosition([x,y]);
+	this.mInfowindow.open(this.mMap, this.mMarker.getPosition());
+};
+
+Map.prototype.showPosition = function(position)
+{	
+	GMap.Map.mLatitude  = position.coords.latitude;
+	GMap.Map.mLongitude = position.coords.longitude;
+	GMap.Map.mapGoTO(GMap.Map.mLongitude, GMap.Map.mLatitude);
+	GMap.Map.getAddress();
+};
+
+Map.prototype.getAddress = function()
+{
+	var self = this;
+	var lnglatXY = [self.mLongitude, self.mLatitude];
+	
+	self.mGeocoder.getAddress(lnglatXY, function(status, result)
 	{
 		if (status === 'complete' && result.info === 'OK') 
 		{
-		   input.value = result.regeocode.formattedAddress;
+		   self.mInput.value = result.regeocode.formattedAddress;
 		}
 		else
 		{
-		   alert("Failed to get the current address!");
+		   alert(GMap.ConstString.cFailedCurrentAddress);
 		}
 	}); 
-}
+};
 
-function getLocation()
+Map.prototype.getLocation = function()
 {
 	if (navigator.geolocation)
 	{
-		navigator.geolocation.getCurrentPosition(showPosition);
+		navigator.geolocation.getCurrentPosition(this.showPosition);
 	}
 	else
 	{
-		alert("The browser does not support access to geographical location！");
+		alert(GMap.ConstString.cNotSupport);
 	}
-}
+};
 
-function getPosition()
+Map.prototype.getPosition = function()
 {
-	input.onchange = function(e)
+	var self = this;
+
+	self.mInput.onchange = function(e)
 	{
-		var address = input.value;
+		var address = self.mInput.value;
 		
-		geocoder.getLocation(address,function(status,result)
+		self.mGeocoder.getLocation(address,function(status,result)
 			{
 				if(status == 'complete' && result.geocodes.length)
 				{
-					marker.setPosition(result.geocodes[0].location);
-					map.setCenter(marker.getPosition());
+					self.mMarker.setPosition(result.geocodes[0].location);
+					self.mMap.setCenter(self.mMarker.getPosition());
+					self.mInfowindow.open(self.mMap, self.mMarker.getPosition());
 				}
 				else
 				{
-					alert("Failed to get the position!");
+					alert(GMap.ConstString.cFailedGetPosition);
 				}
 			}
 		);
 	}
 	
-	input.onchange();	
-}
+	self.mInput.onchange();	
+};
 
-onLoad();
+Map.getInstance = function()
+{
+	if(!Map.instance)
+	{
+		Map.instance = new Map;
+	}
+
+	return Map.instance;
+};
+
+GMap.Map = Map.getInstance();
